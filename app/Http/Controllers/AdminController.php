@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use App\Models\Articulo;
 use App\Models\Talles;
@@ -32,6 +33,49 @@ class AdminController extends Controller
             'noticias' => $noticias,
         ]);
     }
+
+     // Actualizar un usuario existente
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:6|confirmed',
+            'role'     => 'required|in:admin,user',
+        ]);
+
+        $user = User::findOrFail($id);
+
+        $data = [
+            'name'  => $validated['name'],
+            'email' => $validated['email'],
+            'role'  => $validated['role'],
+        ];
+
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->update($data);
+
+        return redirect()
+            ->route('admin.section', ['seccion' => 'usuarios'])
+            ->with('feedback.message', 'Usuario actualizado correctamente')
+            ->with('feedback.type', 'success');
+    }
+
+    // Eliminar un usuario
+    public function destroy($id)
+    {
+        User::findOrFail($id)->delete();
+
+        return redirect()
+            ->route('admin.section', ['seccion' => 'usuarios'])
+            ->with('feedback.message', 'Usuario eliminado correctamente')
+            ->with('feedback.type', 'success');
+    }
+
+
 
     public function mostrarSeccion($seccion)
     {
